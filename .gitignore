@@ -1,4 +1,4 @@
-# ── Python ────────────────────────────────
+# ── Python (legacy, can remove) ───────────────
 __pycache__/
 *.py[cod]
 *.pyo
@@ -7,19 +7,24 @@ __pycache__/
 venv/
 .venv/
 
-# ── Node / Next.js ───────────────────────
+# ── Java / Maven ─────────────────────────────
+backend/target/
+backend/*.jar
+*.class
+
+# ── Node / Next.js ───────────────────────────
 node_modules/
 frontend/.next/
 frontend/out/
 frontend/build/
 
-# ── Environment / Secrets ────────────────
+# ── Environment / Secrets ────────────────────
 .env
 .env.local
 backend/.env
 frontend/.env.local
 
-# ── OS / IDE ─────────────────────────────
+# ── OS / IDE ─────────────────────────────────
 .DS_Store
 Thumbs.db
 .vscode/
