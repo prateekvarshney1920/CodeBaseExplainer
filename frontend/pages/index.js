@@ -1,172 +1,98 @@
-import Head from "next/head";
-import { useState, useCallback } from "react";
-import InputPanel from "../components/InputPanel";
-import FileTree from "../components/FileTree";
-import DependencyGraph from "../components/DependencyGraph";
-import ExplanationPanel from "../components/ExplanationPanel";
-import PromptEditor from "../components/PromptEditor";
-import { analyzeGithub, analyzeUpload, explainFile } from "../lib/api";
+import React from 'react';
+import Link from 'next/link';
 
-export default function Home() {
-  // Analysis state
-  const [analysisData, setAnalysisData] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState(0);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [isExplaining, setIsExplaining] = useState(false);
-  const [currentSummary, setCurrentSummary] = useState("");
-  const [error, setError] = useState("");
+const LandingPage = () => {
+  const featureStrip = [
+    { num: '01', title: 'GitHub URL + file upload', desc: 'Paste any public repo URL or drag-drop your source files directly.' },
+    { num: '02', title: 'File tree viewer', desc: 'Navigate your entire project structure with recursive folder expansion.' },
+    { num: '03', title: 'Dependency graph', desc: 'Force-directed D3 graph of all imports, modules and their relationships.' },
+    { num: '04', title: 'AI file explanation', desc: 'Claude streams a per-file summary covering purpose, exports and functions.' },
+  ];
 
-  // Handle analysis (GitHub or Upload)
-  const handleAnalyze = useCallback(async (input) => {
-    setIsLoading(true);
-    setLoadingStep(0);
-    setError("");
-    setAnalysisData(null);
-    setSelectedFile(null);
-    setCurrentSummary("");
-
-    // Simulate step progress
-    const stepInterval = setInterval(() => {
-      setLoadingStep((prev) => (prev < 4 ? prev + 1 : prev));
-    }, 2000);
-
-    try {
-      let result;
-      if (input.type === "github") {
-        result = await analyzeGithub(input.url);
-      } else {
-        result = await analyzeUpload(input.file);
-      }
-      setAnalysisData(result);
-      setLoadingStep(5);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      clearInterval(stepInterval);
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Handle file selection
-  const handleFileClick = useCallback(
-    (filepath) => {
-      setSelectedFile(filepath);
-      // Set summary from cached data
-      if (analysisData?.summaries?.[filepath]) {
-        setCurrentSummary(analysisData.summaries[filepath]);
-      } else {
-        setCurrentSummary("");
-      }
-    },
-    [analysisData]
-  );
-
-  // Handle "explain simpler" re-fetch
-  const handleExplainSimple = useCallback(
-    async (filepath) => {
-      if (!analysisData?.files?.[filepath]) return;
-      setIsExplaining(true);
-      try {
-        const result = await explainFile(
-          filepath,
-          analysisData.files[filepath],
-          true
-        );
-        setCurrentSummary(result.explanation);
-      } catch (err) {
-        setCurrentSummary(`Error: ${err.message}`);
-      } finally {
-        setIsExplaining(false);
-      }
-    },
-    [analysisData]
-  );
-
-  // Build parsed files data for FileTree
-  const parsedFiles = analysisData?.graph?.nodes
-    ? Object.fromEntries(
-        analysisData.graph.nodes.map((n) => [
-          n.id,
-          {
-            language: n.data?.language || "unknown",
-            imports: n.data?.imports || [],
-            exports: n.data?.exports || [],
-            declarations: n.data?.declarations || [],
-          },
-        ])
-      )
-    : {};
-
-  // Get file data for selected file
-  const selectedFileData = selectedFile ? parsedFiles[selectedFile] : null;
+  const mainFeatures = [
+    { num: '01', badge: 'React · Tailwind', title: 'GitHub URL input + file upload', desc: 'Paste any public GitHub URL or drag-and-drop your source files. Supports bulk upload with instant file-type detection.' },
+    { num: '02', badge: 'Virtualized', title: 'File tree viewer', desc: 'Recursive folder and file tree with expand/collapse, file type icons, keyword search and active file highlighting.' },
+    { num: '03', badge: 'D3.js · React Flow', title: 'Dependency graph visualization', desc: 'Force-directed graph of all imports and module relationships. Highlights circular dependencies and lets you click any node to inspect.' },
+    { num: '04', badge: 'Claude API', title: 'File explanation panel', desc: 'Select any file to stream an AI summary — purpose, key exports, functions and complexity metrics.' },
+  ];
 
   return (
-    <>
-      <Head>
-        <title>CodeBase Explainer — AI-Powered Code Analysis</title>
-        <meta
-          name="description"
-          content="Understand any codebase instantly with AI-powered analysis, dependency graphs, and plain-English explanations."
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <div className="page-container">
+      {/* NAV */}
+      <nav className="nav">
+        <div className="brand-name">codebase<em>.</em>explainer</div>
+        <div className="nav-links">
+          <a className="nav-link">Features</a>
+          <a className="nav-link">Docs</a>
+          <Link href="/upload" className="nav-cta text-center">Get started ↗</Link>
+        </div>
+      </nav>
 
-      <div className="app-container" id="app-root">
-        {/* Header */}
-        <header className="app-header">
-          <div className="logo">
-            <div className="logo-icon">🧠</div>
-            <h1>CodeBase Explainer</h1>
+      {/* HERO */}
+      <header className="hero">
+        <div className="hero-grid" />
+        <div className="hero-inner">
+          <h1 className="hero-title">Understand any<br/><em>codebase</em><br/>instantly.</h1>
+          <p className="hero-sub">Drop a GitHub URL or upload your files. Get a full dependency graph, file-by-file AI explanations, and an editable prompt interface.</p>
+          <div style={{ display: 'flex' }}>
+            <Link href="/upload" className="hero-btn solid" style={{ textDecoration: 'none' }}>Start analysing ↗</Link>
+            <button className="hero-btn" style={{ borderLeft: 'none' }}>View demo</button>
           </div>
-          <PromptEditor />
-        </header>
+        </div>
+      </header>
 
-        {/* Main 3-Panel Layout */}
-        <main className="main-content">
-          {/* Left Panel */}
-          <div className="left-panel">
-            <InputPanel
-              onAnalyze={handleAnalyze}
-              isLoading={isLoading}
-              loadingStep={loadingStep}
-            />
-            {analysisData && (
-              <FileTree
-                parsedFiles={parsedFiles}
-                entryPoints={analysisData.entry_points || []}
-                cycles={analysisData.cycles || []}
-                onFileClick={handleFileClick}
-                selectedFile={selectedFile}
-              />
-            )}
+      {/* FEATURE STRIP */}
+      <div className="strip">
+        {featureStrip.map(item => (
+          <div key={item.num} className="strip-item">
+            <div style={{ fontSize: '9px', color: 'var(--color-text-tertiary)', marginBottom: '8px' }}>{item.num}</div>
+            <div style={{ fontSize: '11px', marginBottom: '4px' }}>{item.title}</div>
+            <p style={{ fontSize: '9px', color: 'var(--color-text-tertiary)' }}>{item.desc}</p>
           </div>
-
-          {/* Center Panel — Graph */}
-          <div className="center-panel">
-            <DependencyGraph
-              graphData={analysisData?.graph}
-              onNodeClick={handleFileClick}
-              selectedNode={selectedFile}
-              entryPoints={analysisData?.entry_points || []}
-              cycles={analysisData?.cycles || []}
-            />
-          </div>
-
-          {/* Right Panel — Explanations */}
-          <div className="right-panel">
-            <ExplanationPanel
-              selectedFile={selectedFile}
-              fileData={selectedFileData}
-              summary={currentSummary}
-              architectureOverview={analysisData?.architecture_overview || ""}
-              onExplainSimple={handleExplainSimple}
-              isExplaining={isExplaining}
-            />
-          </div>
-        </main>
+        ))}
       </div>
-    </>
+
+      {/* MAIN FEATURES GRID */}
+      <section style={{ padding: '3.5rem 2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2.5rem' }}>
+          <h2 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '2rem', fontWeight: 300 }}>What's <em>inside</em></h2>
+          <span style={{ fontSize: '9px', color: 'var(--color-text-tertiary)', letterSpacing: '0.14em' }}>5 CORE FEATURES</span>
+        </div>
+        <div className="feature-grid">
+          {mainFeatures.map(feat => (
+            <div key={feat.num} className="feat-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <span style={{ fontSize: '9px', border: '0.5px solid var(--color-border-tertiary)', padding: '0 5px' }}>{feat.num}</span>
+                <span className="feat-badge">{feat.badge}</span>
+              </div>
+              <div style={{ fontSize: '12px', marginBottom: '8px' }}>{feat.title}</div>
+              <p style={{ fontSize: '10px', color: 'var(--color-text-tertiary)', lineHeight: '1.8' }}>{feat.desc}</p>
+            </div>
+          ))}
+          {/* Bento-style span for the final feature */}
+          <div className="feat-card" style={{ gridColumn: '1 / -1', borderBottom: 'none' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <span style={{ fontSize: '9px', border: '0.5px solid var(--color-border-tertiary)', padding: '0 5px' }}>05</span>
+              <span className="feat-badge" style={{ borderColor: '#fca5a5', color: '#f87171' }}>Required</span>
+            </div>
+            <div style={{ fontSize: '12px', marginBottom: '8px' }}>Prompt editor UI</div>
+            <p style={{ fontSize: '10px', color: 'var(--color-text-tertiary)', lineHeight: '1.8' }}>Monaco-powered prompt editor with live variable token insertion, saved presets, and a reviewer annotation sidebar.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="footer">
+        <div>codebase<em>.</em>viewer</div>
+        <div style={{ display: 'flex', gap: '24px' }}>
+          <span>GitHub</span>
+          <span>Twitter</span>
+          <span>Changelog</span>
+        </div>
+        <div>Built with Claude API · v2.1.0</div>
+      </footer>
+    </div>
   );
-}
+};
+
+export default LandingPage;
