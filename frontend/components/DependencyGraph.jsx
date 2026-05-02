@@ -12,37 +12,22 @@ import ReactFlow, {
 import dagre from "dagre";
 import "reactflow/dist/style.css";
 
-/** Language → node styling for light mode */
-const LANG_STYLES = {
-  python: { bg: "#3776AB", text: "#fff", mini: "#3776AB" },
-  javascript: { bg: "#F0DB4F", text: "#1a1a2e", mini: "#F0DB4F" },
-  typescript: { bg: "#3178C6", text: "#fff", mini: "#3178C6" },
-  java: { bg: "#ED8B00", text: "#fff", mini: "#ED8B00" },
-  go: { bg: "#00ADD8", text: "#fff", mini: "#00ADD8" },
-  cpp: { bg: "#00599C", text: "#fff", mini: "#00599C" },
-  c: { bg: "#5F6B7C", text: "#fff", mini: "#5F6B7C" },
-  csharp: { bg: "#239120", text: "#fff", mini: "#239120" },
-  ruby: { bg: "#CC342D", text: "#fff", mini: "#CC342D" },
-  rust: { bg: "#DEA584", text: "#1a1a2e", mini: "#DEA584" },
-  unknown: { bg: "#6B7280", text: "#fff", mini: "#6B7280" },
-};
-
 /** Node dimensions for dagre layout */
-const NODE_WIDTH = 200;
-const NODE_HEIGHT = 64;
+const NODE_WIDTH = 160;
+const NODE_HEIGHT = 40;
 
 /**
- * Compute a dagre-based tree layout (top → bottom).
+ * Compute a dagre-based layout (left → right, organic flow like madge).
  */
 function getLayoutedElements(nodes, edges) {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
   dagreGraph.setGraph({
-    rankdir: "TB",       // Top-to-Bottom tree
-    nodesep: 60,         // Horizontal spacing between siblings
-    ranksep: 100,        // Vertical spacing between ranks
-    marginx: 40,
-    marginy: 40,
+    rankdir: "LR",       // Left-to-Right flow like madge
+    nodesep: 40,         // Vertical spacing
+    ranksep: 80,         // Horizontal spacing between ranks
+    marginx: 30,
+    marginy: 30,
   });
 
   nodes.forEach((node) => {
@@ -56,12 +41,12 @@ function getLayoutedElements(nodes, edges) {
   dagre.layout(dagreGraph);
 
   const layoutedNodes = nodes.map((node) => {
-    const nodeWithPosition = dagreGraph.node(node.id);
+    const pos = dagreGraph.node(node.id);
     return {
       ...node,
       position: {
-        x: nodeWithPosition.x - NODE_WIDTH / 2,
-        y: nodeWithPosition.y - NODE_HEIGHT / 2,
+        x: pos.x - NODE_WIDTH / 2,
+        y: pos.y - NODE_HEIGHT / 2,
       },
     };
   });
@@ -70,7 +55,12 @@ function getLayoutedElements(nodes, edges) {
 }
 
 /**
- * DependencyGraph — Interactive tree-structured graph using React Flow + dagre.
+ * DependencyGraph — Madge-style interactive dependency graph.
+ *
+ * Color coding:
+ *   🔵 Blue border  = file has outgoing dependencies
+ *   🟢 Green border = leaf node (no dependencies)
+ *   🔴 Red border   = file is part of a circular dependency
  */
 export default function DependencyGraph({
   graphData,
@@ -82,53 +72,73 @@ export default function DependencyGraph({
   const cycleFiles = useMemo(() => new Set((cycles || []).flat()), [cycles]);
   const entrySet = useMemo(() => new Set(entryPoints || []), [entryPoints]);
 
-  // Prepare nodes with light-mode styling
+  // Build a set of files that have outgoing edges (importers)
+  const filesWithDeps = useMemo(() => {
+    if (!graphData?.edges) return new Set();
+    return new Set(graphData.edges.map((e) => e.source));
+  }, [graphData]);
+
   const { layoutedNodes, layoutedEdges } = useMemo(() => {
     if (!graphData?.nodes) return { layoutedNodes: [], layoutedEdges: [] };
 
     const rawNodes = graphData.nodes.map((node) => {
-      const lang = node.data?.language || "unknown";
-      const style = LANG_STYLES[lang] || LANG_STYLES.unknown;
       const isEntry = entrySet.has(node.id);
       const inCycle = cycleFiles.has(node.id);
+      const hasDeps = filesWithDeps.has(node.id);
       const isSelected = selectedNode === node.id;
+
+      // Color logic matching madge:
+      //  - Red = circular dependency
+      //  - Blue = has outgoing deps
+      //  - Green = leaf (no deps)
+      let borderColor = "#4ade80"; // green (leaf)
+      if (inCycle) {
+        borderColor = "#f87171"; // red (circular)
+      } else if (hasDeps) {
+        borderColor = "#60a5fa"; // blue (has deps)
+      }
+
+      // Compact label: just the filename path
+      const label = node.data?.label || node.id;
 
       return {
         ...node,
         data: {
           ...node.data,
           label: (
-            <div className="graph-node-label">
-              <span className="graph-node-name">
-                {isEntry ? "⚡ " : ""}
-                {inCycle ? "⚠️ " : ""}
-                {node.data?.label || node.id}
-              </span>
-              <span className="graph-node-lang" style={{ color: style.text }}>
-                {lang}
-              </span>
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "#e8e8f0",
+              whiteSpace: "nowrap",
+            }}>
+              {isEntry && <span style={{ fontSize: "11px" }}>⚡</span>}
+              {inCycle && <span style={{ fontSize: "11px" }}>⚠️</span>}
+              <span>{label}</span>
             </div>
           ),
         },
         style: {
-          background: style.bg,
-          color: style.text,
+          background: isSelected
+            ? "rgba(40, 42, 58, 0.95)"
+            : "rgba(28, 30, 44, 0.92)",
+          color: "#e8e8f0",
           border: isSelected
-            ? `3px solid ${style.bg}`
-            : isEntry
-            ? "2px solid #16a76e"
-            : inCycle
-            ? "2px solid #e5484d"
-            : "2px solid rgba(255,255,255,0.25)",
-          borderRadius: "12px",
-          padding: "10px 14px",
+            ? `2.5px solid ${borderColor}`
+            : `1.5px solid ${borderColor}`,
+          borderRadius: "20px",        // Pill shape like madge
+          padding: "6px 16px",
           fontSize: "12px",
           fontWeight: "600",
-          fontFamily: "'Inter', sans-serif",
-          width: NODE_WIDTH,
+          minWidth: "auto",
+          width: "auto",
           boxShadow: isSelected
-            ? `0 0 0 4px ${style.bg}30, 0 4px 16px rgba(0,0,0,0.12)`
-            : "0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
+            ? `0 0 12px ${borderColor}55, 0 2px 8px rgba(0,0,0,0.4)`
+            : "0 2px 6px rgba(0,0,0,0.3)",
           transition: "all 0.25s ease",
           cursor: "pointer",
         },
@@ -141,24 +151,25 @@ export default function DependencyGraph({
 
       return {
         ...edge,
-        animated: isHighlighted,
+        type: "default",  // bezier curves like madge
+        animated: false,
         style: {
-          stroke: isHighlighted ? "#5b5fc7" : "#c4c7d4",
-          strokeWidth: isHighlighted ? 2.5 : 1.5,
+          stroke: isHighlighted ? "#a5b4fc" : "rgba(160, 165, 190, 0.45)",
+          strokeWidth: isHighlighted ? 2 : 1.2,
           transition: "all 0.25s ease",
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: isHighlighted ? "#5b5fc7" : "#c4c7d4",
-          width: 14,
-          height: 14,
+          color: isHighlighted ? "#a5b4fc" : "rgba(160, 165, 190, 0.5)",
+          width: 12,
+          height: 12,
         },
       };
     });
 
     const { nodes: ln, edges: le } = getLayoutedElements(rawNodes, rawEdges);
     return { layoutedNodes: ln, layoutedEdges: le };
-  }, [graphData, selectedNode, entrySet, cycleFiles]);
+  }, [graphData, selectedNode, entrySet, cycleFiles, filesWithDeps]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges);
@@ -181,14 +192,19 @@ export default function DependencyGraph({
     return (
       <div className="graph-empty" id="dependency-graph">
         <div className="graph-empty-content">
-          <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-            <circle cx="40" cy="12" r="8" stroke="#5b5fc7" strokeWidth="2" fill="#5b5fc710" />
-            <circle cx="20" cy="48" r="8" stroke="#5b5fc7" strokeWidth="2" fill="#5b5fc710" />
-            <circle cx="60" cy="48" r="8" stroke="#5b5fc7" strokeWidth="2" fill="#5b5fc710" />
-            <line x1="36" y1="20" x2="24" y2="40" stroke="#5b5fc740" strokeWidth="2" />
-            <line x1="44" y1="20" x2="56" y2="40" stroke="#5b5fc740" strokeWidth="2" />
+          <svg width="100" height="70" viewBox="0 0 100 70" fill="none">
+            <rect x="2" y="22" width="28" height="18" rx="9" stroke="#60a5fa" strokeWidth="1.5" fill="rgba(28,30,44,0.8)" />
+            <text x="16" y="34" fill="#e8e8f0" fontSize="7" fontWeight="600" textAnchor="middle">a.js</text>
+            <rect x="42" y="4" width="28" height="18" rx="9" stroke="#60a5fa" strokeWidth="1.5" fill="rgba(28,30,44,0.8)" />
+            <text x="56" y="16" fill="#e8e8f0" fontSize="7" fontWeight="600" textAnchor="middle">b.js</text>
+            <rect x="42" y="40" width="28" height="18" rx="9" stroke="#4ade80" strokeWidth="1.5" fill="rgba(28,30,44,0.8)" />
+            <text x="56" y="52" fill="#e8e8f0" fontSize="7" fontWeight="600" textAnchor="middle">c.js</text>
+            <line x1="30" y1="28" x2="42" y2="16" stroke="rgba(160,165,190,0.5)" strokeWidth="1.2" />
+            <line x1="30" y1="34" x2="42" y2="46" stroke="rgba(160,165,190,0.5)" strokeWidth="1.2" />
+            <polygon points="40,15 42,13 42,17" fill="rgba(160,165,190,0.5)" />
+            <polygon points="40,47 42,45 42,49" fill="rgba(160,165,190,0.5)" />
           </svg>
-          <p>Analyze a repository to see the dependency tree</p>
+          <p>Analyze a repository to see the dependency graph</p>
         </div>
       </div>
     );
@@ -203,31 +219,51 @@ export default function DependencyGraph({
         onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         fitView
-        fitViewOptions={{ padding: 0.3 }}
+        fitViewOptions={{ padding: 0.25 }}
         minZoom={0.15}
-        maxZoom={2}
+        maxZoom={2.5}
         attributionPosition="bottom-left"
       >
-        <Background color="#e2e4ec" gap={24} size={1} />
+        <Background color="rgba(255,255,255,0.03)" gap={30} size={1} />
         <Controls className="graph-controls" showInteractive={false} />
         <MiniMap
           nodeColor={(node) => {
-            const lang = node.data?.language || "unknown";
-            return (LANG_STYLES[lang] || LANG_STYLES.unknown).mini;
+            const inCycle = cycleFiles.has(node.id);
+            const hasDeps = filesWithDeps.has(node.id);
+            if (inCycle) return "#f87171";
+            if (hasDeps) return "#60a5fa";
+            return "#4ade80";
           }}
-          maskColor="rgba(248, 249, 252, 0.85)"
+          maskColor="rgba(10, 12, 20, 0.8)"
           className="graph-minimap"
         />
       </ReactFlow>
+
+      {/* Legend + Stats bar */}
       <div className="graph-stats">
         <span>{graphData.nodes.length} files</span>
-        <span>•</span>
-        <span>{graphData.edges.length} dependencies</span>
+        <span className="graph-stat-sep">•</span>
+        <span>{graphData.edges.length} deps</span>
         {cycles.length > 0 && (
           <>
-            <span>•</span>
-            <span className="cycle-warning">⚠️ {cycles.length} cycles</span>
+            <span className="graph-stat-sep">•</span>
+            <span className="cycle-warning">⚠ {cycles.length} circular</span>
           </>
+        )}
+        <span className="graph-stat-sep">|</span>
+        <span className="graph-legend-item">
+          <span className="graph-legend-dot" style={{ background: "#60a5fa" }} />
+          has deps
+        </span>
+        <span className="graph-legend-item">
+          <span className="graph-legend-dot" style={{ background: "#4ade80" }} />
+          leaf
+        </span>
+        {cycles.length > 0 && (
+          <span className="graph-legend-item">
+            <span className="graph-legend-dot" style={{ background: "#f87171" }} />
+            circular
+          </span>
         )}
       </div>
     </div>
