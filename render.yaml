@@ -27,7 +27,6 @@ services:
   - type: web
     name: codebase-explainer-ui
     runtime: static
-    region: oregon
     plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
