@@ -9,25 +9,68 @@ import ReactFlow, {
   useEdgesState,
   MarkerType,
 } from "reactflow";
+import dagre from "dagre";
 import "reactflow/dist/style.css";
 
-/** Language → color for minimap and highlighting */
-const LANG_COLORS = {
-  python: "#3776AB",
-  javascript: "#F7DF1E",
-  typescript: "#3178C6",
-  java: "#ED8B00",
-  go: "#00ADD8",
-  cpp: "#00599C",
-  c: "#A8B9CC",
-  csharp: "#239120",
-  ruby: "#CC342D",
-  rust: "#DEA584",
-  unknown: "#6B7280",
+/** Language → node styling for light mode */
+const LANG_STYLES = {
+  python: { bg: "#3776AB", text: "#fff", mini: "#3776AB" },
+  javascript: { bg: "#F0DB4F", text: "#1a1a2e", mini: "#F0DB4F" },
+  typescript: { bg: "#3178C6", text: "#fff", mini: "#3178C6" },
+  java: { bg: "#ED8B00", text: "#fff", mini: "#ED8B00" },
+  go: { bg: "#00ADD8", text: "#fff", mini: "#00ADD8" },
+  cpp: { bg: "#00599C", text: "#fff", mini: "#00599C" },
+  c: { bg: "#5F6B7C", text: "#fff", mini: "#5F6B7C" },
+  csharp: { bg: "#239120", text: "#fff", mini: "#239120" },
+  ruby: { bg: "#CC342D", text: "#fff", mini: "#CC342D" },
+  rust: { bg: "#DEA584", text: "#1a1a2e", mini: "#DEA584" },
+  unknown: { bg: "#6B7280", text: "#fff", mini: "#6B7280" },
 };
 
+/** Node dimensions for dagre layout */
+const NODE_WIDTH = 200;
+const NODE_HEIGHT = 64;
+
 /**
- * DependencyGraph — Interactive graph visualization using React Flow.
+ * Compute a dagre-based tree layout (top → bottom).
+ */
+function getLayoutedElements(nodes, edges) {
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+  dagreGraph.setGraph({
+    rankdir: "TB",       // Top-to-Bottom tree
+    nodesep: 60,         // Horizontal spacing between siblings
+    ranksep: 100,        // Vertical spacing between ranks
+    marginx: 40,
+    marginy: 40,
+  });
+
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
+  });
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  const layoutedNodes = nodes.map((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    return {
+      ...node,
+      position: {
+        x: nodeWithPosition.x - NODE_WIDTH / 2,
+        y: nodeWithPosition.y - NODE_HEIGHT / 2,
+      },
+    };
+  });
+
+  return { nodes: layoutedNodes, edges };
+}
+
+/**
+ * DependencyGraph — Interactive tree-structured graph using React Flow + dagre.
  */
 export default function DependencyGraph({
   graphData,
@@ -39,13 +82,13 @@ export default function DependencyGraph({
   const cycleFiles = useMemo(() => new Set((cycles || []).flat()), [cycles]);
   const entrySet = useMemo(() => new Set(entryPoints || []), [entryPoints]);
 
-  // Prepare nodes with styling
-  const initialNodes = useMemo(() => {
-    if (!graphData?.nodes) return [];
+  // Prepare nodes with light-mode styling
+  const { layoutedNodes, layoutedEdges } = useMemo(() => {
+    if (!graphData?.nodes) return { layoutedNodes: [], layoutedEdges: [] };
 
-    return graphData.nodes.map((node) => {
+    const rawNodes = graphData.nodes.map((node) => {
       const lang = node.data?.language || "unknown";
-      const color = LANG_COLORS[lang] || LANG_COLORS.unknown;
+      const style = LANG_STYLES[lang] || LANG_STYLES.unknown;
       const isEntry = entrySet.has(node.id);
       const inCycle = cycleFiles.has(node.id);
       const isSelected = selectedNode === node.id;
@@ -61,47 +104,38 @@ export default function DependencyGraph({
                 {inCycle ? "⚠️ " : ""}
                 {node.data?.label || node.id}
               </span>
-              <span
-                className="graph-node-lang"
-                style={{ color: lang === "javascript" ? "#000" : "#fff" }}
-              >
+              <span className="graph-node-lang" style={{ color: style.text }}>
                 {lang}
               </span>
             </div>
           ),
         },
         style: {
-          background: isSelected
-            ? `linear-gradient(135deg, ${color}dd, ${color}99)`
-            : `linear-gradient(135deg, ${color}88, ${color}55)`,
-          color: lang === "javascript" ? "#000" : "#fff",
+          background: style.bg,
+          color: style.text,
           border: isSelected
-            ? `3px solid ${color}`
+            ? `3px solid ${style.bg}`
             : isEntry
-            ? "2px solid #10b981"
+            ? "2px solid #16a76e"
             : inCycle
-            ? "2px solid #ef4444"
-            : "2px solid rgba(255,255,255,0.15)",
+            ? "2px solid #e5484d"
+            : "2px solid rgba(255,255,255,0.25)",
           borderRadius: "12px",
-          padding: "12px 16px",
+          padding: "10px 14px",
           fontSize: "12px",
           fontWeight: "600",
-          width: 180,
+          fontFamily: "'Inter', sans-serif",
+          width: NODE_WIDTH,
           boxShadow: isSelected
-            ? `0 0 20px ${color}66`
-            : "0 4px 12px rgba(0,0,0,0.3)",
-          transition: "all 0.3s ease",
+            ? `0 0 0 4px ${style.bg}30, 0 4px 16px rgba(0,0,0,0.12)`
+            : "0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06)",
+          transition: "all 0.25s ease",
           cursor: "pointer",
         },
       };
     });
-  }, [graphData, selectedNode, entrySet, cycleFiles]);
 
-  // Prepare edges
-  const initialEdges = useMemo(() => {
-    if (!graphData?.edges) return [];
-
-    return graphData.edges.map((edge) => {
+    const rawEdges = (graphData.edges || []).map((edge) => {
       const isHighlighted =
         selectedNode === edge.source || selectedNode === edge.target;
 
@@ -109,28 +143,30 @@ export default function DependencyGraph({
         ...edge,
         animated: isHighlighted,
         style: {
-          stroke: isHighlighted ? "#818cf8" : "#6366f180",
-          strokeWidth: isHighlighted ? 3 : 1.5,
-          transition: "all 0.3s ease",
+          stroke: isHighlighted ? "#5b5fc7" : "#c4c7d4",
+          strokeWidth: isHighlighted ? 2.5 : 1.5,
+          transition: "all 0.25s ease",
         },
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          color: isHighlighted ? "#818cf8" : "#6366f180",
-          width: 16,
-          height: 16,
+          color: isHighlighted ? "#5b5fc7" : "#c4c7d4",
+          width: 14,
+          height: 14,
         },
       };
     });
-  }, [graphData, selectedNode]);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+    const { nodes: ln, edges: le } = getLayoutedElements(rawNodes, rawEdges);
+    return { layoutedNodes: ln, layoutedEdges: le };
+  }, [graphData, selectedNode, entrySet, cycleFiles]);
 
-  // Update when data changes
+  const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges);
+
   useEffect(() => {
-    setNodes(initialNodes);
-    setEdges(initialEdges);
-  }, [initialNodes, initialEdges, setNodes, setEdges]);
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+  }, [layoutedNodes, layoutedEdges, setNodes, setEdges]);
 
   const handleNodeClick = useCallback(
     (_, node) => {
@@ -146,14 +182,13 @@ export default function DependencyGraph({
       <div className="graph-empty" id="dependency-graph">
         <div className="graph-empty-content">
           <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-            <circle cx="20" cy="20" r="8" stroke="#6366f1" strokeWidth="2" fill="#6366f133" />
-            <circle cx="60" cy="20" r="8" stroke="#6366f1" strokeWidth="2" fill="#6366f133" />
-            <circle cx="40" cy="60" r="8" stroke="#6366f1" strokeWidth="2" fill="#6366f133" />
-            <line x1="26" y1="24" x2="34" y2="54" stroke="#6366f155" strokeWidth="2" />
-            <line x1="54" y1="24" x2="46" y2="54" stroke="#6366f155" strokeWidth="2" />
-            <line x1="28" y1="20" x2="52" y2="20" stroke="#6366f155" strokeWidth="2" />
+            <circle cx="40" cy="12" r="8" stroke="#5b5fc7" strokeWidth="2" fill="#5b5fc710" />
+            <circle cx="20" cy="48" r="8" stroke="#5b5fc7" strokeWidth="2" fill="#5b5fc710" />
+            <circle cx="60" cy="48" r="8" stroke="#5b5fc7" strokeWidth="2" fill="#5b5fc710" />
+            <line x1="36" y1="20" x2="24" y2="40" stroke="#5b5fc740" strokeWidth="2" />
+            <line x1="44" y1="20" x2="56" y2="40" stroke="#5b5fc740" strokeWidth="2" />
           </svg>
-          <p>Analyze a repository to see the dependency graph</p>
+          <p>Analyze a repository to see the dependency tree</p>
         </div>
       </div>
     );
@@ -168,22 +203,19 @@ export default function DependencyGraph({
         onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.2}
+        fitViewOptions={{ padding: 0.3 }}
+        minZoom={0.15}
         maxZoom={2}
         attributionPosition="bottom-left"
       >
-        <Background color="#6366f122" gap={20} size={1} />
-        <Controls
-          className="graph-controls"
-          showInteractive={false}
-        />
+        <Background color="#e2e4ec" gap={24} size={1} />
+        <Controls className="graph-controls" showInteractive={false} />
         <MiniMap
           nodeColor={(node) => {
             const lang = node.data?.language || "unknown";
-            return LANG_COLORS[lang] || LANG_COLORS.unknown;
+            return (LANG_STYLES[lang] || LANG_STYLES.unknown).mini;
           }}
-          maskColor="rgba(0, 0, 0, 0.7)"
+          maskColor="rgba(248, 249, 252, 0.85)"
           className="graph-minimap"
         />
       </ReactFlow>
