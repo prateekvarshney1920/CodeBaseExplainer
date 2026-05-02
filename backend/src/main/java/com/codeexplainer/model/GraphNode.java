@@ -3,9 +3,7 @@ package com.codeexplainer.model;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Graph node compatible with React Flow frontend.
- */
+
 public class GraphNode {
     private String id;
     private String type = "default";

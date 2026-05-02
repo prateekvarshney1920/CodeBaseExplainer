@@ -7,10 +7,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 
-/**
- * Entry Point Detector — Identifies likely entry point files in a codebase.
- * Uses filename heuristics, graph topology, and import hub analysis.
- */
+
 @Component
 public class EntryPointDetector {
 
@@ -33,9 +30,7 @@ public class EntryPointDetector {
             "src/index", "src/main", "src/app", "cmd/", "bin/"
     );
 
-    /**
-     * Detect entry point files using multiple heuristics.
-     */
+
     @SuppressWarnings("unchecked")
     public List<String> detect(Map<String, ParsedFile> parsedFiles, Map<String, Object> graphData) {
         Set<String> entryPoints = new LinkedHashSet<>();

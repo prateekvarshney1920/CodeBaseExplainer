@@ -2,9 +2,7 @@ package com.codeexplainer.model;
 
 import java.util.Map;
 
-/**
- * Graph edge compatible with React Flow frontend.
- */
+
 public class GraphEdge {
     private String id;
     private String source;

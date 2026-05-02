@@ -1,0 +1,202 @@
+# 🚀 CodeBase Explainer
+
+## 📌 Overview
+
+CodeBase Explainer is a backend system that analyzes a codebase, constructs a dependency graph, identifies execution flow, and generates human-readable explanations using an LLM.
+
+Instead of sending raw code directly to AI, the system first **structures the code into meaningful relationships**, improving accuracy and contextual understanding.
+
+---
+
+## 🎯 Problem Statement
+
+Understanding a new codebase is slow and challenging, especially for beginners and contributors.
+
+Most tools:
+
+* Provide shallow summaries
+* Ignore structural relationships
+* Do not explain execution flow
+
+---
+
+## 💡 Solution
+
+We built a **graph-driven code intelligence system** that:
+
+* Parses source code into structured metadata
+* Builds a dependency graph
+* Detects entry points
+* Uses AI to generate context-aware explanations
+
+---
+
+## ⚙️ Tech Stack
+
+* **Backend:** Java, Spring Boot
+* **Build Tool:** Maven
+* **API Calls:** OkHttp
+* **AI Integration:** Groq (LLM API)
+* **Containerization:** Docker
+* **Testing:** JUnit
+
+---
+
+## 🧠 System Architecture
+
+### 🔹 Core Flow
+
+User Input → Controller → AgentService → Engine → LLM → Response
+
+---
+
+### 🔹 Components
+
+#### Controllers
+
+* ExplainController → File explanation
+* GitHubController → Repository analysis
+* UploadController → ZIP-based analysis
+* HealthController → Service monitoring
+
+---
+
+#### Core Engine
+
+* **CodeParser** → Extracts imports, declarations, exports
+* **GraphBuilder** → Builds dependency graph
+* **EntryPointDetector** → Identifies execution entry points
+
+---
+
+#### Services
+
+* **AgentService** → Orchestrates full analysis pipeline
+* **GitHubService** → Fetches repository files
+* **LlmService** → Handles AI interaction
+
+---
+
+#### Models
+
+* ParsedFile → Structured representation of code
+* GraphNode → Nodes in dependency graph
+* GraphEdge → Relationships between files
+
+---
+
+## 🔄 Execution Flow
+
+1. User provides GitHub URL or uploads ZIP
+2. Files are filtered and preprocessed
+3. CodeParser extracts structured metadata
+4. GraphBuilder constructs dependency graph
+5. EntryPointDetector identifies execution flow
+6. LLM generates:
+
+   * File-level summaries
+   * Architecture overview
+7. Structured response is returned
+
+---
+
+## 💣 Key Differentiator
+
+> We do NOT send raw code directly to the LLM.
+
+Instead:
+
+* We first build a **graph-based representation**
+* Then apply AI on structured data
+
+This improves:
+
+* Accuracy
+* Context awareness
+* Scalability
+
+---
+
+## 🧩 Features
+
+* Multi-language support (Java, Python, JavaScript, TypeScript, etc.)
+* Graph-based dependency analysis
+* Entry point detection using heuristics + graph logic
+* Dynamic prompt system (no hardcoded prompts)
+* GitHub repository analysis
+* ZIP upload support
+* Circular dependency detection
+
+---
+
+## 🔐 Configuration
+
+Environment variables:
+
+```env
+GROQ_API_KEY=
+GROQ_MODEL=
+GITHUB_TOKEN=
+PORT=8000
+```
+
+Prompt templates are stored in:
+
+```
+prompts.json
+```
+
+---
+
+## 🐳 Docker Setup
+
+```bash
+docker build -t codebase-explainer .
+docker run -p 8000:8000 codebase-explainer
+```
+
+---
+
+## 🧪 Testing
+
+Unit tests cover:
+
+* Language detection
+* Parsing logic
+* Multi-language handling
+
+Run tests:
+
+```bash
+mvn test
+```
+
+---
+
+## ⚠️ Limitations
+
+* Regex-based parsing (not AST-level accuracy)
+* No caching for LLM calls
+* Limited handling of very large repositories
+* Basic security (no authentication yet)
+
+---
+
+## 🚀 Future Improvements
+
+* AST-based parsing for higher accuracy
+* Graph visualization UI
+* Caching & batching for LLM calls
+* Authentication (JWT)
+* Support for additional languages
+
+---
+
+## 👥 Team Contribution
+
+* **Radhika Sishodiya** → Backend architecture, API development, GitHub & upload pipelines, LLM integration
+* **Prateek Varshney** → Core engine (CodeParser, GraphBuilder, EntryPointDetector)
+* **Priya Kumari** → Frontend UI/UX and user interaction
+
+---
+

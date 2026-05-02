@@ -1,8 +1,6 @@
 package com.codeexplainer.dto;
 
-/**
- * Request body for PUT /api/prompts/{key}.
- */
+
 public class PromptUpdate {
     private String value;
 

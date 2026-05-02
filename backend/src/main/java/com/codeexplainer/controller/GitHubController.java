@@ -13,9 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * GitHub Route — POST /api/github endpoint for analyzing GitHub repositories.
- */
+
 @RestController
 public class GitHubController {
 

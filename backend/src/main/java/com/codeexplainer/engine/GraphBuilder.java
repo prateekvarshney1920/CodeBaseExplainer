@@ -11,10 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
-/**
- * Graph Builder — Constructs a dependency graph from parsed source files.
- * Output is compatible with React Flow for frontend visualization.
- */
+
 @Component
 public class GraphBuilder {
 
@@ -38,12 +35,7 @@ public class GraphBuilder {
     private Set<String> fileSet;
     private Map<String, Map<String, List<String>>> adjacency;
 
-    /**
-     * Build the dependency graph from parsed file data.
-     *
-     * @param parsedFiles Map of filename → ParsedFile
-     * @return Graph data map compatible with React Flow
-     */
+
     public Map<String, Object> build(Map<String, ParsedFile> parsedFiles) {
         fileSet = new HashSet<>(parsedFiles.keySet());
         adjacency = new LinkedHashMap<>();

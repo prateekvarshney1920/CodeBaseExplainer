@@ -2,9 +2,7 @@ package com.codeexplainer.model;
 
 import java.util.List;
 
-/**
- * Represents a parsed source file with extracted imports, exports, and declarations.
- */
+
 public class ParsedFile {
     private String filename;
     private String language;

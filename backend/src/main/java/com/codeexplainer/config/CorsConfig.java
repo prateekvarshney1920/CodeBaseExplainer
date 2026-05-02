@@ -9,9 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * CORS configuration — allows the frontend to call the API.
- */
+
 @Configuration
 public class CorsConfig {
 

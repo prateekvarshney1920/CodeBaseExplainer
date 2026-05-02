@@ -1,8 +1,6 @@
 package com.codeexplainer.dto;
 
-/**
- * Request body for POST /api/explain.
- */
+
 public class ExplainRequest {
     private String filename;
     private String content;

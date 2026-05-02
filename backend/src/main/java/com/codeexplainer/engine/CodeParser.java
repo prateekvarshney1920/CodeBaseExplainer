@@ -10,16 +10,13 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Parser — Extracts imports, exports, and declarations from source files.
- * Uses regex-based parsing for all supported languages.
- */
+
 @Component
 public class CodeParser {
 
     private static final Logger logger = LoggerFactory.getLogger(CodeParser.class);
 
-    // ── Language detection ─────────────────────────────────────────────────
+
 
     private static final Map<String, String> EXTENSION_MAP = Map.ofEntries(
             Map.entry(".py", "python"),
@@ -38,9 +35,7 @@ public class CodeParser {
             Map.entry(".hpp", "cpp")
     );
 
-    /**
-     * Detect programming language from file extension.
-     */
+
     public String detectLanguage(String filename) {
         String name = filename.toLowerCase();
         int dotIndex = name.lastIndexOf('.');
@@ -49,9 +44,7 @@ public class CodeParser {
         return EXTENSION_MAP.getOrDefault(ext, "unknown");
     }
 
-    /**
-     * Parse a source file to extract imports, exports, and declarations.
-     */
+
     public ParsedFile parseFile(String filename, String content) {
         String language = detectLanguage(filename);
 
@@ -90,9 +83,9 @@ public class CodeParser {
         return new ParsedFile(filename, language, imports, exports, declarations);
     }
 
-    // ── Python parser ─────────────────────────────────────────────────────
 
-    @SuppressWarnings("unchecked")
+
+
     private List<String>[] parsePython(String content) {
         List<String> imports = new ArrayList<>();
         List<String> exports = new ArrayList<>();
@@ -126,9 +119,9 @@ public class CodeParser {
         return new List[]{imports, exports, declarations};
     }
 
-    // ── JavaScript/TypeScript parser ──────────────────────────────────────
 
-    @SuppressWarnings("unchecked")
+
+
     private List<String>[] parseJavaScript(String content) {
         List<String> imports = new ArrayList<>();
         List<String> exports = new ArrayList<>();
@@ -158,7 +151,7 @@ public class CodeParser {
                 continue;
             }
 
-            // export function/class/const
+
             m = Pattern.compile("^export\\s+(?:default\\s+)?(?:function|class|const|let|var)\\s+(\\w+)").matcher(trimmed);
             if (m.find()) {
                 String name = m.group(1);

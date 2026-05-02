@@ -12,9 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Explain Route — Endpoints for file explanations and prompt management.
- */
+
 @RestController
 public class ExplainController {
 
@@ -26,9 +24,7 @@ public class ExplainController {
         this.llmService = llmService;
     }
 
-    /**
-     * Generate an AI explanation for a single file.
-     */
+
     @PostMapping("/api/explain")
     public ResponseEntity<?> explainFile(@RequestBody ExplainRequest request) {
         try {
@@ -66,9 +62,7 @@ public class ExplainController {
         }
     }
 
-    /**
-     * Return all configured LLM prompts.
-     */
+
     @GetMapping("/api/prompts")
     public ResponseEntity<?> getPrompts() {
         try {
@@ -81,9 +75,7 @@ public class ExplainController {
         }
     }
 
-    /**
-     * Update a specific prompt by key.
-     */
+
     @PutMapping("/api/prompts/{key}")
     public ResponseEntity<?> updatePrompt(@PathVariable String key, @RequestBody PromptUpdate update) {
         try {

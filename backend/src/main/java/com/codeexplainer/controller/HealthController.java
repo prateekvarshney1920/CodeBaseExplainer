@@ -5,9 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-/**
- * Health check endpoint.
- */
+
 @RestController
 public class HealthController {
 

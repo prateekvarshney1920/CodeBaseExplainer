@@ -13,9 +13,7 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-/**
- * Upload Route — POST /api/upload endpoint for analyzing uploaded ZIP files.
- */
+
 @RestController
 public class UploadController {
 

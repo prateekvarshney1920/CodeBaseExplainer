@@ -1,8 +1,6 @@
 package com.codeexplainer.dto;
 
-/**
- * Request body for POST /api/github.
- */
+
 public class GitHubRequest {
     private String url;
 

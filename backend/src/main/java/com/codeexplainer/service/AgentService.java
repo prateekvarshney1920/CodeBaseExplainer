@@ -11,10 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Agent Service — AI Agent that orchestrates codebase analysis.
- * Pipeline: detect_language → parse_files → build_graph → detect_entry_points → summarize_files → generate_overview
- */
+
 @Service
 public class AgentService {
 
@@ -33,13 +30,7 @@ public class AgentService {
         this.llmService = llmService;
     }
 
-    /**
-     * Run the full analysis pipeline on a set of source files.
-     *
-     * @param repoData Map of filename → file content
-     * @return Analysis results map matching the Python API's response schema
-     */
-    @SuppressWarnings("unchecked")
+
     public Map<String, Object> analyze(Map<String, String> repoData) {
         Map<String, Object> results = new LinkedHashMap<>();
 
