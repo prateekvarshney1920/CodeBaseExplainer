@@ -1,11 +1,3 @@
-# 🧠 CodeBase Explainer
-
-> **AI-powered codebase analysis tool** — Paste a GitHub URL or upload a ZIP, and get instant dependency graphs + plain-English explanations of every file.
-
-**Hackathon**: InOut Hacks | **Track**: Open Innovation | **Deadline**: May 2, 2026
-
----
-
 ## 🎯 Problem Statement
 
 Students and new developers struggle to understand large codebases. There's no clear overview of file connections, system flow, or where to begin reading code.
@@ -169,11 +161,7 @@ Prompts can be edited via the **⚙️ Prompt Editor** in the UI or the API.
 |------|------|
 | **Radhika** | Backend & AI Agent |
 | **Prateek** | Core Engine (Parser + Graph) |
-| **Palak** | Core Engine + Frontend |
 | **Priya** | Frontend |
 
 ---
 
-## 📄 License
-
-Built for InOut Hacks 2026. Open source under MIT License.
